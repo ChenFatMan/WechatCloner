@@ -56,6 +56,29 @@ dist/WechatCloner.zip
 scripts/package.sh --keep-build
 ```
 
+指定架构和输出文件名：
+
+```bash
+scripts/package.sh --arch arm64 --zip-name WechatCloner-v1.0.0-arm64.zip
+scripts/package.sh --arch x86_64 --zip-name WechatCloner-v1.0.0-x86_64.zip
+```
+
+## 发布
+
+推送 `v*` tag 会触发 GitHub Actions，分别构建 Apple Silicon 和 Intel 版本，并创建 GitHub Release：
+
+```bash
+git tag -a v1.0.0 -m "WechatCloner v1.0.0"
+git push origin v1.0.0
+```
+
+Release 会包含：
+
+```text
+WechatCloner-v1.0.0-arm64.zip
+WechatCloner-v1.0.0-x86_64.zip
+```
+
 ## 边界
 
 - 不包含授权、激活、统计、更新或远程 API。

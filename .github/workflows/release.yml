@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x86_64
+            runner: macos-15-intel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Build package
+        run: |
+          scripts/package.sh \
+            --arch "${{ matrix.arch }}" \
+            --zip-name "WechatCloner-${{ github.ref_name }}-${{ matrix.arch }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WechatCloner-${{ github.ref_name }}-${{ matrix.arch }}
+          path: dist/WechatCloner-${{ github.ref_name }}-${{ matrix.arch }}.zip
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: WechatCloner ${{ github.ref_name }}
+          body: |
+            ## WechatCloner ${{ github.ref_name }}
+
+            macOS release builds:
+
+            - `WechatCloner-${{ github.ref_name }}-arm64.zip` for Apple Silicon Macs.
+            - `WechatCloner-${{ github.ref_name }}-x86_64.zip` for Intel Macs.
+
+            Built from tag `${{ github.ref_name }}`.
+          files: release-assets/*.zip

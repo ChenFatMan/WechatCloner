@@ -10,22 +10,43 @@ DIST_DIR="$PROJECT_ROOT/dist"
 APP_NAME="WechatCloner.app"
 APP_PATH="$DERIVED_DATA/Build/Products/$CONFIGURATION/$APP_NAME"
 DIST_APP_PATH="$DIST_DIR/$APP_NAME"
-ZIP_PATH="$DIST_DIR/WechatCloner.zip"
+ZIP_NAME="WechatCloner.zip"
+ARCH=""
 
 KEEP_BUILD=0
 
-for arg in "$@"; do
+while [[ "$#" -gt 0 ]]; do
+  arg="$1"
   case "$arg" in
     --keep-build)
       KEEP_BUILD=1
+      shift
+      ;;
+    --arch)
+      ARCH="${2:-}"
+      if [[ "$ARCH" != "arm64" && "$ARCH" != "x86_64" ]]; then
+        echo "--arch must be arm64 or x86_64" >&2
+        exit 2
+      fi
+      shift 2
+      ;;
+    --zip-name)
+      ZIP_NAME="${2:-}"
+      if [[ -z "$ZIP_NAME" || "$ZIP_NAME" == */* ]]; then
+        echo "--zip-name must be a file name, not a path" >&2
+        exit 2
+      fi
+      shift 2
       ;;
     *)
       echo "Unknown argument: $arg" >&2
-      echo "Usage: scripts/package.sh [--keep-build]" >&2
+      echo "Usage: scripts/package.sh [--keep-build] [--arch arm64|x86_64] [--zip-name NAME.zip]" >&2
       exit 2
       ;;
   esac
 done
+
+ZIP_PATH="$DIST_DIR/$ZIP_NAME"
 
 if ! command -v xcodebuild >/dev/null 2>&1; then
   echo "xcodebuild not found. Install full Xcode first." >&2
@@ -58,12 +79,18 @@ rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
 set +e
-BUILD_OUTPUT="$(xcodebuild \
+BUILD_ARGS=(
   -project "$PROJECT_FILE" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
-  -derivedDataPath "$DERIVED_DATA" \
-  clean build 2>&1)"
+  -derivedDataPath "$DERIVED_DATA"
+)
+
+if [[ -n "$ARCH" ]]; then
+  BUILD_ARGS+=(ARCHS="$ARCH" ONLY_ACTIVE_ARCH=NO)
+fi
+
+BUILD_OUTPUT="$(xcodebuild "${BUILD_ARGS[@]}" clean build 2>&1)"
 BUILD_STATUS=$?
 set -e
 
