@@ -54,7 +54,7 @@ if ! command -v xcodebuild >/dev/null 2>&1; then
 fi
 
 DEVELOPER_DIR="$(xcode-select -p 2>/dev/null || true)"
-if [[ "$DEVELOPER_DIR" != */Xcode.app/Contents/Developer ]]; then
+if [[ "$DEVELOPER_DIR" != */*.app/Contents/Developer ]]; then
   echo "Active developer directory is not full Xcode: ${DEVELOPER_DIR:-unknown}" >&2
   echo "Run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer" >&2
   exit 1
